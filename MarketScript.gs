@@ -1,8 +1,11 @@
 /**
  * Global member variables for use with rate limits
  */
-var cacheAccessLimit = 300;
+var cacheAccessLimit = 250;
 var lastCacheAccess = 0;
+
+var crestAccessLimit = 1000/30;
+var lastCrestAccess = 0;
 
 /**
  * Private helper function that is used to initialize the refresh token
@@ -137,6 +140,23 @@ function getMarketPrice(itemId, regionId, stationId, orderType, authCode, refres
   }
 
   return returnPrice;
+}
+
+/**
+ * Custom function that returns an array of prices for a given array
+ * of items.
+ *
+ * @param {itemIdList} itemIdList the list of item IDs of the products to look up
+ * @param {regionId} regionId the region ID for the market to look up
+ * @param {stationId} stationId the station ID for the market to focus on
+ * @param {orderType} orderType this should be set to "sell" or "buy" orders
+ * @param {authCode} authCode The authorization code provided by EVE SSO
+ * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value
+ * @customfunction
+ */
+function getMarketPriceList(itemIdList, regionId, stationId, orderType, authCode, refresh)
+{
+  return 0;
 }
 
 /**
@@ -315,22 +335,15 @@ function fetchUrl(url, options)
 {
   var semaphore = "lock";
   var semaphoreLife = 2;
-
-  // Check the cache, we may already have this value
-  var httpResponse = url.length < 250 ? getCacheValue(url) : null;
-  if (httpResponse != null)
-  {
-    return httpResponse;
-  }
   
   var lock = getCacheValue(semaphore);
   while (lock != null)
   {
-    Utilities.sleep(300);
     lock = getCacheValue(semaphore);
   }
   setCacheValue(semaphore, true, semaphoreLife);
 
+  var httpResponse = null;
   if (options == null)
   {
     httpResponse = UrlFetchApp.fetch(url);
@@ -338,12 +351,6 @@ function fetchUrl(url, options)
   else
   {
     httpResponse = UrlFetchApp.fetch(url, options);
-  }
-  
-  // Cache this http response, if it will fit
-  if (url.length < 250 && httpResponse.length < 100000)
-  {
-    setCacheValue(url, httpResponse, 500);
   }
   
   // Wait based on rate limit
