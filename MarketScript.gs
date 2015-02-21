@@ -150,13 +150,45 @@ function getMarketPrice(itemId, regionId, stationId, orderType, authCode, refres
  * @param {regionId} regionId the region ID for the market to look up
  * @param {stationId} stationId the station ID for the market to focus on
  * @param {orderType} orderType this should be set to "sell" or "buy" orders
- * @param {authCode} authCode The authorization code provided by EVE SSO
  * @param {refresh} refresh (Optional) Change this value to force Google to refresh return value
  * @customfunction
  */
-function getMarketPriceList(itemIdList, regionId, stationId, orderType, authCode, refresh)
+function getMarketPriceList(itemIdList, regionId, stationId, orderType, refresh)
 {
-  return 0;
+  var returnValues = [];
+
+  try
+  {
+    // Only validate arguments within the context of this function
+    // Further validation will occur inside getMarketPrice
+    if (itemIdList == null || typeof(itemIdList) != "object")
+    {
+      returnValues = "Invalid Item list";
+    }
+    else
+    {
+      for (var itemIndex = 0; itemIndex < itemIdList.length; itemIndex++)
+      {
+        var itemId = itemIdList[itemIndex];
+        if (typeof(itemId) == "object")
+        {
+          // This needs to be fixed before passing to getMarketPrice() function
+          if (itemId.length == 1)
+          {
+            // This is only a number
+            itemId = Number(itemId);
+          }
+        }
+        returnValues[itemIndex] = getMarketPrice(itemId, regionId, stationId, orderType)
+      }
+    }
+  }
+  catch (error)
+  {
+    returnValues = error.message;
+  }
+
+  return returnValues;
 }
 
 /**
